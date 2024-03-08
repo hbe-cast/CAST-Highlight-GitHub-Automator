@@ -14,7 +14,7 @@ BASE_TARGET_DIR = config['base_target_dir']
 # WEBHOOK_SECRET = os.getenv('GITHUB_WEBHOOK_SECRET') # to set global variable
 
 # Hardcoding the WEBHOOK_SECRET for troubleshooting
-WEBHOOK_SECRET = 'w6uHzbeW4ZKMkfVShdj8rR'
+WEBHOOK_SECRET = ''
 
 def clone_repository(repo_url, target_dir):
     try:
