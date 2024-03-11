@@ -1,10 +1,12 @@
 ### How this works:
 
-1. Clone the `My-Github-App` repository on your local machine.
-2. Update all the values in `repo_config.json`.
-3. In the `My-Github-App` folder where it was cloned, open a terminal and run the command `python app.py`.
-4. Open a new terminal in the same `My-Github-App` folder and run the `lt --port 3000` command. This creates a bridge between GitHub and the Flask application running on a local machine or private network, making the `app.py` webhook endpoint accessible from the internet.
-5. Once you push any changes to a repository from your organization that has the GitHub app installed, it will trigger an event to clone that repository into your local machine. It will then execute a scan on the cloned repository through the HL CLI and upload the scan results to the HL instance specified in the `repo_config.json` file.
+1. Clone the `My-Github-App` repository to your local machine.
+2. Download the HL CLI from: [HL CLI Download Link](https://doc.casthighlight.com/product-tutorials-third-party-tools/automated-code-scan-command-line/)
+3. After downloading the `Highlight-Automation-Command.tar` file, unzip it and copy the `perl` folder into the `My-Github-App` folder that you just cloned.
+4. Update all the values in the `repo_config.json` file.
+5. In the `My-Github-App` folder where it was cloned, open a terminal and run the command `python app.py`.
+6. Open a new terminal in the same `My-Github-App` folder and run the `lt --port 3000` command. This creates a bridge between GitHub and the Flask application running on a local machine or private network, making the `app.py` webhook endpoint accessible from the internet.
+7. When you push any changes to a repository from your organization with the GitHub app installed, it triggers an event to clone that repository to your local machine. It then executes a scan on the cloned repository using the HL CLI and uploads the scan results to the HL instance specified in the `repo_config.json` file.
 
 
 ### Executive Summary:
