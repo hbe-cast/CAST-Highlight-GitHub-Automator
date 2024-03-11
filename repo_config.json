@@ -1,4 +1,6 @@
 {
-    "base_target_dir": "C:/Users/HBE/OneDrive - CAST/Desktop/test/4"
-  }
-  
+    "base_target_dir": "C:/Users/HBE/OneDrive - CAST/Desktop/test/4",
+    "highlight_jar_path": "C:/CAST/Highlight-Automation-Command/HighlightAutomation.jar",
+    "working_dir": "C:/CAST/test/my-gh-app-test",
+    "perl_install_dir": "C:/Strawberry/perl/bin"
+}
