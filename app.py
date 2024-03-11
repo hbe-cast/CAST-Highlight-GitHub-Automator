@@ -13,13 +13,14 @@ with open('repo_config.json') as config_file:
 BASE_TARGET_DIR = config['base_target_dir']
 HIGHLIGHT_JAR_PATH = config['highlight_jar_path']
 WORKING_DIR = config['working_dir']
-PERL_INSTALL_DIR = config['perl_install_dir']  # Load the Perl installation directory
-
-# Hardcoding the WEBHOOK_SECRET for troubleshooting
-WEBHOOK_SECRET = 'w6uHzbeW4ZKMkfVShdj8rR'
+COMPANY_ID = config['companyId']
+APPLICATION_ID = config['applicationId']
+TOKEN_AUTH = config['tokenAuth']
+WEBHOOK_SECRET = config['webhook_secret'] # Webhook Secret from GitHub
 
 def clone_repository(repo_url, target_dir):
     try:
+        print(f"Starting cloning of repository from {repo_url} into {target_dir}")
         run(['git', 'clone', repo_url, target_dir], check=True)
         print(f'Repository cloned successfully into {target_dir}')
         execute_cli_command(target_dir)
@@ -32,8 +33,9 @@ def execute_cli_command(target_dir):
             'java', '-jar', HIGHLIGHT_JAR_PATH, 
             '--workingDir', WORKING_DIR, 
             '--sourceDir', target_dir,
-            '--perlInstallDir', PERL_INSTALL_DIR,  # Perl
-            '--skipUpload'
+            '--companyId', COMPANY_ID,
+            '--applicationId', APPLICATION_ID,
+            '--tokenAuth', TOKEN_AUTH
         ]
         run(command, check=True)
         print('CLI command executed successfully')

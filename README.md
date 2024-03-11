@@ -1,3 +1,12 @@
+### How this works:
+
+1. Clone the `My-Github-App` repository on your local machine.
+2. Update all the values in `repo_config.json`.
+3. In the `My-Github-App` folder where it was cloned, open a terminal and run the command `python app.py`.
+4. Open a new terminal in the same `My-Github-App` folder and run the `lt --port 3000` command. This creates a bridge between GitHub and the Flask application running on a local machine or private network, making the `app.py` webhook endpoint accessible from the internet.
+5. Once you push any changes to a repository from your organization that has the GitHub app installed, it will trigger an event to clone that repository into your local machine. It will then execute a scan on the cloned repository through the HL CLI and upload the scan results to the HL instance specified in the `repo_config.json` file.
+
+
 ### Executive Summary:
 
 We've developed an integration between a GitHub App and a Flask-based web application that automates the cloning of repositories into a specified directory on a server or local machine whenever a "push" event occurs in any of the repositories where the GitHub App is installed.

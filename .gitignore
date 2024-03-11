@@ -2,3 +2,4 @@ venv
 curl_clone.py
 perl
 *.properties
+gh_app_test
