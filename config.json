@@ -1,9 +1,12 @@
 {
     "webhook_secret": "w6uHzbeW4ZKMkfVShdj8rR",
-    "base_target_dir": "C:/CAST/code_/my-github-app/gh_app_test/4",
+    "base_target_dir": "C:/CAST/code_/my-github-app/gh_app_test/5",
     "highlight_jar_path": "C:/CAST/Highlight-Automation-Command/HighlightAutomation.jar",
     "working_dir": "C:/CAST/test/my-gh-app-test",
     "companyId": "22072",
     "applicationId": "330310",
-    "tokenAuth": "cfa8b27f-d79d-4af7-9dee-f3040ab2147e"
+    "tokenAuth": "cfa8b27f-d79d-4af7-9dee-f3040ab2147e",
+    "map_file": "C:/CAST/code_/my-github-app/app_map.xlsx"
 }
+
+  

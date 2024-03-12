@@ -3,3 +3,4 @@ curl_clone.py
 *.properties
 gh_app_test
 perl
+*.xlsx
