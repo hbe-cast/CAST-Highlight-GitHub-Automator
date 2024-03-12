@@ -5,7 +5,7 @@ Follow these steps to set up and run the My-Github-App on your local machine:
 ### 1. Cloning the Repository
 Clone the `My-Github-App` repository to your local machine using the following command:
 ```bash
-git clone <repository-link>
+git clone git@github.com:hbe-cast/my-github-app.git
 ```
 Replace `<repository-link>` with the actual link to the `My-Github-App` repository.
 
