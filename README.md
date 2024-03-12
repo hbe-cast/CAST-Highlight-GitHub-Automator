@@ -1,15 +1,54 @@
-### How this works:
+# My-Github-App Setup Guide
 
-1. Clone the `My-Github-App` repository to your local machine.
-2. Download the HL CLI from: [HL CLI Download Link](https://doc.casthighlight.com/product-tutorials-third-party-tools/automated-code-scan-command-line/)
-3. After downloading the `Highlight-Automation-Command.tar` file, unzip it and copy the `perl` folder into the `My-Github-App` folder that you just cloned.
-4. Update all the values in the `repo_config.json` file.
-5. In the `My-Github-App` folder where it was cloned, open a terminal and run the command `python app.py`.
-6. Open a new terminal in the same `My-Github-App` folder and run the `lt --port 3000` command. This creates a bridge between GitHub and the Flask application running on a local machine or private network, making the `app.py` webhook endpoint accessible from the internet.
-7. When you push any changes to a repository from your organization with the GitHub app installed, it triggers an event to clone that repository to your local machine. It then executes a scan on the cloned repository using the HL CLI and uploads the scan results to the HL instance specified in the `repo_config.json` file.
+Follow these steps to set up and run the My-Github-App on your local machine:
+
+### 1. Cloning the Repository
+Clone the `My-Github-App` repository to your local machine using the following command:
+```bash
+git clone <repository-link>
+```
+Replace `<repository-link>` with the actual link to the `My-Github-App` repository.
+
+### 2. Downloading the Highlight Command Line Interface (HL CLI)
+Download the HL CLI from the [official download page](https://doc.casthighlight.com/product-tutorials-third-party-tools/automated-code-scan-command-line/).
+
+### 3. Setting Up HL CLI
+After downloading, extract the `Highlight-Automation-Command.tar` file. Copy the contents of the extracted `perl` folder into the `My-Github-App` directory you cloned in step 1.
+
+### 4. Configuring the Application
+Update the `repo_config.json` file with the necessary values. Ensure all fields are filled out correctly to avoid any issues during runtime.
+
+### 5. Running the Application
+Navigate to the `My-Github-App` directory in a terminal window and start the application by running:
+```bash
+python app.py
+```
+
+### 6. Establishing a Public Endpoint
+Open a new terminal in the `My-Github-App` directory and execute the following command to create a public URL for your Flask application:
+```bash
+lt --port 3000
+```
+This step uses [localtunnel](https://theboroer.github.io/localtunnel-www/) to expose your local server to the internet, enabling GitHub to trigger webhooks.
+
+### 7. Preparing the Repository Mapping File
+Ensure you have an Excel file named `app_map.xlsx` in the `My-Github-App` directory. The file should adhere to the following format:
+
+| app_name      | troux_id    | gh_url                                      |
+|---------------|-------------|---------------------------------------------|
+| GitCloner     | 7E876-879YUP | https://github.com/hbe-cast/GitCloner       |
+| GitCloner1    | 7E876-879YUP | https://github.com/hbe-cast/GitCloner_1     |
+| WebGoat_test  | 87GHY-123HJ  | https://github.com/hbe-cast/WebGoat_test    |
+
+**Note:** Repositories without a `troux_id` will not be cloned, and the application will halt.
+
+### 8. Triggering Scans
+Whenever changes are pushed to a repository in your organization where the GitHub app is installed, it will trigger an event. This event clones the repository to your local machine and performs a scan using the HL CLI. The scan results are then uploaded to the Highlight instance specified in the `repo_config.json` file.
 
 
-### Executive Summary:
+
+
+# Summary details of the GitHub App:
 
 We've developed an integration between a GitHub App and a Flask-based web application that automates the cloning of repositories into a specified directory on a server or local machine whenever a "push" event occurs in any of the repositories where the GitHub App is installed.
 
