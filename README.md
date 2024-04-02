@@ -16,7 +16,7 @@ Download the HL CLI from the [official download page](https://doc.casthighlight.
 After downloading, extract the `Highlight-Automation-Command.tar` file. Copy the contents of the extracted `perl` folder into the `My-Github-App` directory you cloned in step 1.
 
 ### 4. Configuring the Application
-Update the `repo_config.json` file with the necessary values. Ensure all fields are filled out correctly to avoid any issues during runtime.
+Update the `config.json` file with the necessary values. Ensure all fields are filled out correctly to avoid any issues during runtime.
 
 ### 5. Running the Application
 Navigate to the `My-Github-App` directory in a terminal window and start the application by running:

@@ -2,9 +2,17 @@ import os
 import hmac
 import hashlib
 import json
+import logging
 from flask import Flask, request, abort
-from subprocess import run, CalledProcessError
+from subprocess import run, PIPE, CalledProcessError
 import pandas as pd
+import requests
+import fasteners
+
+# Set up logging just once, at the beginning
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s:%(levelname)s:%(message)s',
+                    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()])
 
 app = Flask(__name__)
 
@@ -15,73 +23,121 @@ with open('config.json') as config_file:
 # Config Variables
 BASE_TARGET_DIR = config['base_target_dir']
 HIGHLIGHT_JAR_PATH = config['highlight_jar_path']
+PERL_DIR = config['perl_dir']
+ANALYZER_DIR = config['analyzer_dir']
 WORKING_DIR = config['working_dir']
 COMPANY_ID = config['companyId']
-APPLICATION_ID = config['applicationId']
+# APPLICATION_ID = config['applicationId']
 TOKEN_AUTH = config['tokenAuth']
-WEBHOOK_SECRET = config['webhook_secret']  # Webhook Secret from GitHub
+WEBHOOK_SECRET = config['webhook_secret']
 MAP_FILE = config['map_file']
 
+# Global lock for handling concurrency
+lock = fasteners.InterProcessLock('/tmp/clone_repository_lock')
+
 def clone_repository(repo_url, base_target_dir, target_dir):
-    # Read the Excel file
-    df = pd.read_excel(MAP_FILE, usecols="B:C", engine='openpyxl')
-    df.columns = ['Troux_ID', 'GitHub_URL']
-
-    # Normalize the repo_url by removing '.git' if present
-    normalized_repo_url = repo_url[:-4] if repo_url.endswith('.git') else repo_url
-
-    # Find the Troux ID associated with the normalized_repo_url
-    troux_id_row = df[df['GitHub_URL'] == normalized_repo_url]
-
-    if troux_id_row.empty or pd.isnull(troux_id_row['Troux_ID'].values[0]):
-        print(f"No valid Troux ID found for the repository URL: {repo_url}")
+    logging.info("========== Process Start ==========")
+    logging.info("========== Reading App Mapping ==========")
+    try:
+        df = pd.read_excel(MAP_FILE, usecols="A:D", engine='openpyxl')
+        df.columns = ['app_name', 'troux_id', 'gh_url', 'hl_app_id']
+    except Exception as e:
+        logging.error(f">>> ERROR: Error reading Excel file: {e}")
         return
 
-    troux_id = troux_id_row['Troux_ID'].values[0]  # Assuming the first matching Troux ID is what we want
+    # Normalize repo_url by removing '.git' if present to match with 'gh_url' in the Excel file
+    normalized_repo_url = repo_url[:-4] if repo_url.endswith('.git') else repo_url
 
-    # Proceed only if Troux ID is valid
-    if not pd.isna(troux_id):
-        troux_id_dir = os.path.join(base_target_dir, str(troux_id))
-        if not os.path.exists(troux_id_dir):
-            os.makedirs(troux_id_dir)
-            print(f"Created parent directory: {troux_id_dir}")
+    # Match the normalized URL with the 'gh_url' column in the DataFrame
+    app_mapping_row = df[df['gh_url'].str.strip() == normalized_repo_url.strip()]
 
-        # Filter the DataFrame for rows with the same Troux ID
-        same_troux_id_df = df[df['Troux_ID'] == troux_id]
+    if app_mapping_row.empty:
+        logging.warning(f">>> ERROR: No mapping found for the repository URL: {repo_url}")
+        return
 
-        for _, row in same_troux_id_df.iterrows():
-            git_url = row['GitHub_URL']
-            repo_name = git_url.split('/')[-1]  # Extract the repo name from the URL
-            repo_target_dir = os.path.join(troux_id_dir, repo_name)  # Directory for each repo within the Troux_ID parent folder
+    if pd.isnull(app_mapping_row['hl_app_id'].values[0]):
+        logging.error(">>> ERROR: 'hl_app_id' is missing. Please update the mapping with the HL App ID.")
+        return
 
-            # Clone each repository into its directory within the Troux_ID parent folder
-            try:
-                print(f"Starting cloning of repository from {git_url} into {repo_target_dir}")
-                run(['git', 'clone', git_url, repo_target_dir], check=True)
-                print(f'Repository cloned successfully into {repo_target_dir}')
-            except CalledProcessError as e:
-                print(f'Failed to clone repository: {e}')
-        
-        # Execute the CLI
-        execute_cli_command(troux_id_dir)
-    else:
-        print(f"No valid Troux ID found for the repository URL: {repo_url}")
-
-def execute_cli_command(target_dir):
     try:
-        command = [
-            'java', '-jar', HIGHLIGHT_JAR_PATH, 
-            '--workingDir', WORKING_DIR, 
+        application_id = int(str(app_mapping_row['hl_app_id'].values[0]).strip())
+    except ValueError:
+        logging.error(">>> ERROR: 'hl_app_id' value is not a valid integer. Please correct the ID format.")
+        return
+
+    # Verify hl_app_id exists in CAST Highlight
+    api_url = f"https://rpa.casthighlight.com/WS2/domains/{COMPANY_ID}/applications"
+    headers = {'Authorization': f'Bearer {TOKEN_AUTH}'}
+    try:
+        response = requests.get(api_url, headers=headers)
+        response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX or 5XX
+        applications = response.json()
+        if not any(app.get('id') == application_id for app in applications):
+            logging.error(f">>> ERROR: CAST Application ID {application_id} doesn't exist. Please create the corresponding application in CAST Highlight.")
+            return
+    except requests.exceptions.HTTPError as e:
+        logging.error(f">>> ERROR: HTTP error when contacting CAST Highlight API: {e.response.content}")
+        return
+    except requests.exceptions.RequestException as e:
+        logging.error(f">>> ERROR: Failed to verify hl_app_id against CAST Highlight API: {e}")
+        return
+    
+    # Continue with cloning if hl_app_id exists in CAST Highlight...
+    troux_id = app_mapping_row['troux_id'].values[0]
+    troux_id_dir = os.path.join(base_target_dir, str(troux_id))
+    if not os.path.exists(troux_id_dir):
+        os.makedirs(troux_id_dir)
+        logging.info(f"Created parent directory: {troux_id_dir}")
+
+    same_troux_id_df = df[df['troux_id'] == troux_id]
+
+    for _, row in same_troux_id_df.iterrows():
+        git_url = row['gh_url']
+        repo_name = git_url.split('/')[-1]
+        repo_target_dir = os.path.join(troux_id_dir, repo_name)
+
+        try:
+            logging.info("========== Cloning Process ==========")
+            logging.info(f"Starting cloning of repository from {git_url} into {repo_target_dir}")
+            run(['git', 'clone', git_url, repo_target_dir], check=True, stderr=PIPE)
+            logging.info(f'Repository cloned successfully into {repo_target_dir}')
+        except CalledProcessError as e:
+            logging.error(f'>>> ERROR: Failed to clone repository: {e}\n{e.stderr.decode()}')
+            return False
+        
+        execute_cli_command(troux_id_dir, application_id)
+        
+        return True
+    #else:
+    #    logging.warning(f">>> ERROR: No valid Troux ID found for the repository URL: {repo_url}")
+
+def execute_cli_command(target_dir, application_id):
+    logging.info("========== CLI: Importing to Highlight ==========")
+    command = [
+            'java', '-jar', HIGHLIGHT_JAR_PATH,
+            '--workingDir', WORKING_DIR,
             '--sourceDir', target_dir,
             '--companyId', COMPANY_ID,
-            '--applicationId', APPLICATION_ID,
+            # '--applicationId', APPLICATION_ID,
+            '--applicationId', str(application_id),
+            '--perlInstallDir', PERL_DIR,
             '--tokenAuth', TOKEN_AUTH
-        ]
-        print(f"Executing CLI command in {target_dir}")
-        run(command, check=True)
-        print('CLI command executed successfully')
+    ]
+
+    try:
+        logging.info(f"Executing CLI command in {target_dir}")
+        result = run(command, check=True, stderr=PIPE, stdout=PIPE)
+        if result.stdout:
+            logging.info(f'CLI command output: {result.stdout.decode()}')
+        if result.stderr:
+            logging.error(f'>>> ERROR OUTPUT: {result.stderr.decode()}') 
+        logging.info('CLI command executed successfully')
     except CalledProcessError as e:
-        print(f'Failed to execute CLI command: {e}')
+        logging.error(f'>>> ERROR: Failed to execute CLI command: Return code {e.returncode}')
+        if e.stdout:
+            logging.error(f'>>> CLI command output: {e.stdout.decode()}')
+        if e.stderr:
+            logging.error(f'>>> CLI command error output: {e.stderr.decode()}')
 
 def verify_signature(request):
     signature = request.headers.get('X-Hub-Signature')
@@ -95,12 +151,48 @@ def handle_webhook():
 
     data = request.json
     repo_url = data['repository']['clone_url']
-    base_target_dir = BASE_TARGET_DIR
-    target_dir = BASE_TARGET_DIR
 
-    clone_repository(repo_url, base_target_dir, target_dir)
+    logging.info(f"Attempting to process webhook for repo URL: {repo_url}")
+    if lock.acquire(blocking=False):
+        try:
+            logging.info(f"Lock acquired for repo URL: {repo_url}")
+            process_status = clone_repository(repo_url, BASE_TARGET_DIR, BASE_TARGET_DIR)
+            if process_status:
+                logging.info(f"Webhook processed successfully for repo URL: {repo_url}")
+                return 'Webhook processed', 200
+            else:
+                logging.error(f"Failed to process webhook for repo URL: {repo_url}")
+                return 'An error occurred during processing', 500
+        finally:
+            lock.release()
+            logging.info(f"Lock released for repo URL: {repo_url}")
+    else:
+        error_message = f">>> ERROR: Concurrent processing prevented starting the process for: {repo_url}. Process skipped. Please, try again later."
+        logging.error(error_message)
+        # Append the error message to the end of the log file
+        with open("app.log", "a") as log_file:
+            log_file.write(f"{error_message}\n")
+        return 'Process skipped due to concurrency lock', 503
+    
+@app.errorhandler(400)
+def bad_request(error):
+    logging.error(f'Bad Request: {error}')
+    return {'error': 'Bad request'}, 400
 
-    return 'Webhook processed', 200
+@app.errorhandler(404)
+def not_found(error):
+    logging.error(f'Not Found: {error}')
+    return {'error': 'Not found'}, 404
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    logging.error(f'Internal Server Error: {error}')
+    return {'error': 'Internal server error'}, 500
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    logging.error(f'An unexpected error occurred: {error}')
+    return {'error': 'An unexpected error occurred'}, 500
 
 if __name__ == '__main__':
     app.run(port=3000, debug=True)

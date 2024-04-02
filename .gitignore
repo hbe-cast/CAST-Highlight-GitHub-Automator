@@ -4,3 +4,6 @@ curl_clone.py
 gh_app_test
 perl
 *.xlsx
+api_working_draft.py
+original_working_draft.py
+*.log
