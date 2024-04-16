@@ -1,3 +1,5 @@
+import threading
+import queue
 import os
 import hmac
 import hashlib
@@ -9,11 +11,8 @@ import pandas as pd
 import requests
 import fasteners
 
-# Set up logging just once, at the beginning
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s:%(levelname)s:%(message)s',
-                    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()])
-
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s', handlers=[logging.FileHandler("app.log"), logging.StreamHandler()])
 app = Flask(__name__)
 
 # Load the configuration from a JSON file
@@ -34,6 +33,27 @@ MAP_FILE = config['map_file']
 
 # Global lock for handling concurrency
 lock = fasteners.InterProcessLock('/tmp/clone_repository_lock')
+
+# Initialize a queue
+task_queue = queue.Queue()
+
+# Worker thread function
+def worker():
+    while True:
+        repo_url, base_target_dir = task_queue.get()
+        logging.info(f"Task completed for {repo_url}")
+        try:
+            clone_repository(repo_url, base_target_dir, base_target_dir)
+            logging.info(f"Task completed for {repo_url}")
+        finally:
+            task_queue.task_done()
+
+# Start thread pool
+num_worker_threads = 4  # Number of threads
+for i in range(num_worker_threads):
+    t = threading.Thread(target=worker)
+    t.daemon = True
+    t.start()
 
 def clone_repository(repo_url, base_target_dir, target_dir):
     logging.info("========== Process Start ==========")
@@ -126,18 +146,17 @@ def execute_cli_command(target_dir, application_id):
 
     try:
         logging.info(f"Executing CLI command in {target_dir}")
-        result = run(command, check=True, stderr=PIPE, stdout=PIPE)
+        result = run(command, stdout=PIPE, stderr=PIPE, text=True)
         if result.stdout:
-            logging.info(f'CLI command output: {result.stdout.decode()}')
+            logging.info(f'CLI command output: {result.stdout}')
         if result.stderr:
-            logging.error(f'>>> ERROR OUTPUT: {result.stderr.decode()}') 
-        logging.info('CLI command executed successfully')
+            logging.error(f'CLI command error output: {result.stderr}')
     except CalledProcessError as e:
         logging.error(f'>>> ERROR: Failed to execute CLI command: Return code {e.returncode}')
         if e.stdout:
-            logging.error(f'>>> CLI command output: {e.stdout.decode()}')
+            logging.error(f'>>> CLI command output: {e.stdout}')
         if e.stderr:
-            logging.error(f'>>> CLI command error output: {e.stderr.decode()}')
+            logging.error(f'>>> CLI command error output: {e.stderr}')
 
 def verify_signature(request):
     signature = request.headers.get('X-Hub-Signature')
@@ -148,30 +167,22 @@ def verify_signature(request):
 def handle_webhook():
     if not verify_signature(request):
         abort(400, 'Invalid signature')
-
+    
     data = request.json
     repo_url = data['repository']['clone_url']
-
     logging.info(f"Attempting to process webhook for repo URL: {repo_url}")
+    
     if lock.acquire(blocking=False):
         try:
             logging.info(f"Lock acquired for repo URL: {repo_url}")
-            process_status = clone_repository(repo_url, BASE_TARGET_DIR, BASE_TARGET_DIR)
-            if process_status:
-                logging.info(f"Webhook processed successfully for repo URL: {repo_url}")
-                return 'Webhook processed', 200
-            else:
-                logging.error(f"Failed to process webhook for repo URL: {repo_url}")
-                return 'An error occurred during processing', 500
+            task_queue.put((repo_url, BASE_TARGET_DIR))
+            return 'Webhook queued', 202
         finally:
             lock.release()
             logging.info(f"Lock released for repo URL: {repo_url}")
     else:
         error_message = f">>> ERROR: Concurrent processing prevented starting the process for: {repo_url}. Process skipped. Please, try again later."
         logging.error(error_message)
-        # Append the error message to the end of the log file
-        with open("app.log", "a") as log_file:
-            log_file.write(f"{error_message}\n")
         return 'Process skipped due to concurrency lock', 503
     
 @app.errorhandler(400)

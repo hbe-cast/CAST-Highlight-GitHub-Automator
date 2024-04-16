@@ -1,9 +1,11 @@
 venv
-curl_clone.py
+v1.py
 *.properties
 gh_app_test
 perl
 *.xlsx
-api_working_draft.py
-original_working_draft.py
+v2.py
 *.log
+celery.md
+config.json
+v3.py

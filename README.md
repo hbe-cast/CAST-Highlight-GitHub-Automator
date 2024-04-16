@@ -1,6 +1,25 @@
 # My-Github-App Setup Guide
 
-Follow these steps to set up and run the My-Github-App on your local machine:
+## Prerequisites
+
+Before you start setting up My-Github-App, ensure you have the following prerequisites installed on your local machine:
+
+1. **Git**: Needed to clone the My-Github-App repository. Download and install Git from [git-scm.com](https://git-scm.com/).
+
+2. **Python**: The application is a Python-based Flask app. Ensure you have Python installed. You can download it from [python.org](https://www.python.org/). This guide assumes you are using Python 3.
+
+3. **pip**: Python's package installer. It comes pre-installed with Python versions 3.4 and above. You'll need pip to install the required Python packages.
+
+4. **Node.js and npm**: npm is used to install `localtunnel`, which exposes your local server to the internet. Download Node.js (which includes npm) from [nodejs.org](https://nodejs.org/en/).
+
+5. **localtunnel**: This tool allows you to create a public URL for your Flask application running on a local server. Install it globally using npm:
+    ```bash
+    npm install -g localtunnel
+    ```
+
+6. **Excel**: The application requires an Excel file (`app_map.xlsx`) for repository mapping. Ensure you have Excel or a compatible spreadsheet program to create or edit this file.
+
+After installing the prerequisites, follow the steps below to set up and run the My-Github-App on your local machine.
 
 ### 1. Cloning the Repository
 Clone the `My-Github-App` repository to your local machine using the following command:
@@ -29,6 +48,11 @@ Open a new terminal in the `My-Github-App` directory and execute the following c
 ```bash
 lt --port 3000
 ```
+Note: make sure local tunnel is installed
+```bash
+npm install -g localtunnel
+```
+
 This step uses [localtunnel](https://theboroer.github.io/localtunnel-www/) to expose your local server to the internet, enabling GitHub to trigger webhooks.
 
 ### 7. Preparing the Repository Mapping File
