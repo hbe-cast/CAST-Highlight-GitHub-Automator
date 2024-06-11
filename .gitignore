@@ -3,3 +3,4 @@ perl
 *.log
 config.json
 requirements.txt
+config.json
