@@ -1,12 +1,5 @@
-venv
-v1.py
-*.properties
 gh_app_test
 perl
-*.xlsx
-v2.py
 *.log
-celery.md
 config.json
-v3.py
 requirements.txt

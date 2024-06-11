@@ -2,6 +2,7 @@
     "webhook_secret": "<YOUR_WEBHOOK_SECRET>",
     "base_target_dir": "<PATH_TO_BASE_TARGET_DIRECTORY>",
     "analyzer_dir": "<PATH_TO_ANALYZER_DIRECTORY>",
+    "perl_dir": "<PATH_TO_PERL_DIRECTORY>",
     "working_dir": "<PATH_TO_WORKING_DIRECTORY>",
     "highlight_jar_path": "<PATH_TO_HIGHLIGHT_AUTOMATION_JAR>",
     "map_file": "<PATH_TO_MAPPING_EXCEL_FILE>",
