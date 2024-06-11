@@ -10,7 +10,7 @@ Before you start setting up My-Github-App, ensure you have the following prerequ
 
 3. **pip**: Python's package installer. It comes pre-installed with Python versions 3.4 and above. You'll need pip to install the required Python packages.
 
-4. **ngrok**: Required to expose your local server to the internet for webhook events. Download and install from [ngrok.com](https://ngrok.com/).
+4. **ngrok**: Required to expose your local server to the internet for webhook events. Use the executable available in the repo which was downloaded from [ngrok.com](https://ngrok.com/).
 
 5. **Excel**: The application requires an Excel file (`app_map.xlsx`) for repository mapping. Ensure you have Excel or a compatible spreadsheet program to create or edit this file.
 
