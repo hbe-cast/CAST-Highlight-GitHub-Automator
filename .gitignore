@@ -2,4 +2,4 @@ gh_app_test
 perl
 *.log
 requirements.txt
-*.json
+config.json
