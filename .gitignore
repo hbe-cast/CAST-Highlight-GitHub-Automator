@@ -1,5 +1,5 @@
 gh_app_test
 perl
 *.log
-config.json
 requirements.txt
+config.json
