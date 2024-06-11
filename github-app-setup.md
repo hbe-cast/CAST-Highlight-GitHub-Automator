@@ -1,5 +1,3 @@
-Here is the updated README with "localtunnel" replaced by "Ngrok" and the description fixed accordingly:
-
 # Setting Up a GitHub App for Your Organization
 
 This guide provides a streamlined process to set up a GitHub App for your organization. For detailed documentation, please visit [Registering a GitHub App on GitHub Docs](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app#registering-a-github-app).

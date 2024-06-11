@@ -1,5 +1,3 @@
-Here is the updated README with "localtunnel" replaced by "Ngrok" and the description fixed accordingly:
-
 # My-Github-App Setup Guide
 
 ## Prerequisites
