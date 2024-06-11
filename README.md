@@ -1,3 +1,5 @@
+Here is the updated README with "localtunnel" replaced by "Ngrok" and the description fixed accordingly:
+
 # My-Github-App Setup Guide
 
 ## Prerequisites
@@ -10,14 +12,11 @@ Before you start setting up My-Github-App, ensure you have the following prerequ
 
 3. **pip**: Python's package installer. It comes pre-installed with Python versions 3.4 and above. You'll need pip to install the required Python packages.
 
-4. **Node.js and npm**: npm is used to install `localtunnel`, which exposes your local server to the internet. Download Node.js (which includes npm) from [nodejs.org](https://nodejs.org/en/).
+4. **ngrok**: Required to expose your local server to the internet for webhook events. Download and install from [ngrok.com](https://ngrok.com/).
 
-5. **localtunnel**: This tool allows you to create a public URL for your Flask application running on a local server. Install it globally using npm:
-    ```bash
-    npm install -g localtunnel
-    ```
+5. **Excel**: The application requires an Excel file (`app_map.xlsx`) for repository mapping. Ensure you have Excel or a compatible spreadsheet program to create or edit this file.
 
-6. **Excel**: The application requires an Excel file (`app_map.xlsx`) for repository mapping. Ensure you have Excel or a compatible spreadsheet program to create or edit this file.
+6. **GitHub App**: If you need to set up the GitHub App, refer to the [GitHub App Setup Guide](github-app-setup.md).
 
 After installing the prerequisites, follow the steps below to set up and run the My-Github-App on your local machine.
 
@@ -26,7 +25,6 @@ Clone the `My-Github-App` repository to your local machine using the following c
 ```bash
 git clone git@github.com:hbe-cast/my-github-app.git
 ```
-Replace `<repository-link>` with the actual link to the `My-Github-App` repository.
 
 ### 2. Downloading the Highlight Command Line Interface (HL CLI)
 Download the HL CLI from the [official download page](https://doc.casthighlight.com/product-tutorials-third-party-tools/automated-code-scan-command-line/).
@@ -46,33 +44,26 @@ python app.py
 ### 6. Establishing a Public Endpoint
 Open a new terminal in the `My-Github-App` directory and execute the following command to create a public URL for your Flask application:
 ```bash
-lt --port 3000
-```
-Note: make sure local tunnel is installed
-```bash
-npm install -g localtunnel
+ngrok http 3000
 ```
 
-This step uses [localtunnel](https://theboroer.github.io/localtunnel-www/) to expose your local server to the internet, enabling GitHub to trigger webhooks.
+This step uses [ngrok](https://ngrok.com/docs/) to expose your local server to the internet, enabling GitHub to trigger webhooks.
 
 ### 7. Preparing the Repository Mapping File
 Ensure you have an Excel file named `app_map.xlsx` in the `My-Github-App` directory. The file should adhere to the following format:
 
 | app_name      | troux_id    | gh_url                                      |
 |---------------|-------------|---------------------------------------------|
-| GitCloner     | 7E876-879YUP | https://github.com/hbe-cast/GitCloner       |
-| GitCloner1    | 7E876-879YUP | https://github.com/hbe-cast/GitCloner_1     |
-| WebGoat_test  | 87GHY-123HJ  | https://github.com/hbe-cast/WebGoat_test    |
+| GitCloner     | 7E876-879YUP| https://github.com/hbe-cast/GitCloner       |
+| GitCloner1    | 7E876-879YUP| https://github.com/hbe-cast/GitCloner_1     |
+| WebGoat_test  | 87GHY-123HJ | https://github.com/hbe-cast/WebGoat_test    |
 
 **Note:** Repositories without a `troux_id` will not be cloned, and the application will halt.
 
 ### 8. Triggering Scans
 Whenever changes are pushed to a repository in your organization where the GitHub app is installed, it will trigger an event. This event clones the repository to your local machine and performs a scan using the HL CLI. The scan results are then uploaded to the Highlight instance specified in the `repo_config.json` file.
 
-
-
-
-# Summary details of the GitHub App:
+# Summary Details of the GitHub App
 
 We've developed an integration between a GitHub App and a Flask-based web application that automates the cloning of repositories into a specified directory on a server or local machine whenever a "push" event occurs in any of the repositories where the GitHub App is installed.
 
@@ -80,7 +71,7 @@ We've developed an integration between a GitHub App and a Flask-based web applic
 
 1. **GitHub App Setup**: A GitHub App was created and configured with permissions to access repository contents. It was set to receive webhook events, specifically "push" events, from repositories where the App is installed.
 
-2. **Webhook Configuration**: The GitHub App's webhook is configured to send event notifications to a publicly accessible URL, which points to our Flask application. For local development and testing, we used `localtunnel` to expose the local server to the internet.
+2. **Webhook Configuration**: The GitHub App's webhook is configured to send event notifications to a publicly accessible URL, which points to our Flask application. For local development and testing, we used `ngrok` to expose the local server to the internet.
 
 3. **Event Handling**: When a push event occurs in a repository, GitHub sends a webhook event to the Flask application. The event contains details about the push, including the repository's clone URL.
 
@@ -94,7 +85,7 @@ We've developed an integration between a GitHub App and a Flask-based web applic
 
 - **Flask Web Application**: Acts as a webhook server that listens for incoming webhook events from the GitHub App. It contains logic to verify webhook payloads, extract necessary information, and execute repository cloning operations.
 
-- **`localtunnel`/Public URL**: Provides a bridge between GitHub and the Flask application running on a local machine or private network, making the Flask app's webhook endpoint accessible from the internet.
+- **`ngrok`/Public URL**: Provides a bridge between GitHub and the Flask application running on a local machine or private network, making the Flask app's webhook endpoint accessible from the internet.
 
 - **File System/Target Directory**: The location on the server or local machine where the repositories are cloned. Each repository is cloned into a unique subdirectory within this base directory, based on the repository's name.
 
