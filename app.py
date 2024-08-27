@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(mess
 app = Flask(__name__)
 
 # Load the configuration from a JSON file
-with open('hbe-config.json') as config_file:
+with open('config.json') as config_file:
     config = json.load(config_file)
 
 # Config Variables
@@ -206,4 +206,4 @@ def handle_unexpected_error(error):
     return {'error': 'An unexpected error occurred'}, 500
 
 if __name__ == '__main__':
-    app.run(port=3000, debug=True)
+    app.run(debug=True, port=5001 )
