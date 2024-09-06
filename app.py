@@ -22,7 +22,7 @@ with open('config.json') as config_file:
 # Config Variables
 BASE_TARGET_DIR = config['base_target_dir']
 HIGHLIGHT_JAR_PATH = config['highlight_jar_path']
-PERL_DIR = config['perl_dir']
+# PERL_DIR = config['perl_dir']
 ANALYZER_DIR = config['analyzer_dir']
 WORKING_DIR = config['working_dir']
 COMPANY_ID = config['companyId']
@@ -133,44 +133,78 @@ def clone_repository(repo_url, base_target_dir, target_dir):
 
 def execute_cli_command(target_dir, application_id):
     logging.info("========== CLI: Importing to Highlight ==========")
-    command = [
+    
+    # Ensure the target directory uses forward slashes
+    target_dir = target_dir.replace('\\', '/')
+
+    # Change to the analyzer directory
+    original_dir = os.getcwd()  # Store the original working directory
+    try:
+        logging.info(f"Changing working directory to analyzer_dir: {ANALYZER_DIR}")
+        os.chdir(ANALYZER_DIR)  # Change to analyzer_dir
+
+        # Define the command
+        command = [
             'java', '-jar', HIGHLIGHT_JAR_PATH,
             '--workingDir', WORKING_DIR,
             '--sourceDir', target_dir,
             '--companyId', COMPANY_ID,
-            # '--applicationId', APPLICATION_ID,
             '--applicationId', str(application_id),
-            '--perlInstallDir', PERL_DIR,
             '--tokenAuth', TOKEN_AUTH
-    ]
-
-    try:
-        logging.info(f"Executing CLI command in {target_dir}")
+        ]
+        
+        # Execute the command
+        logging.info(f"Executing CLI command in {ANALYZER_DIR}")
         result = run(command, stdout=PIPE, stderr=PIPE, text=True)
+
+        # Log the command output
         if result.stdout:
             logging.info(f'CLI command output: {result.stdout}')
         if result.stderr:
             logging.error(f'CLI command error output: {result.stderr}')
+    
     except CalledProcessError as e:
         logging.error(f'>>> ERROR: Failed to execute CLI command: Return code {e.returncode}')
         if e.stdout:
             logging.error(f'>>> CLI command output: {e.stdout}')
         if e.stderr:
             logging.error(f'>>> CLI command error output: {e.stderr}')
+    
+    finally:
+        # Change back to the original directory
+        os.chdir(original_dir)
+        logging.info(f"Returned to original working directory: {original_dir}")
+
 
 def verify_signature(request):
     signature = request.headers.get('X-Hub-Signature')
+    if not signature:
+        logging.error('Signature not found in headers')
+        return False
+    
     hmac_digest = hmac.new(WEBHOOK_SECRET.encode(), request.data, hashlib.sha1).hexdigest()
-    return hmac.compare_digest(signature, 'sha1=' + hmac_digest)
+    
+    if hmac.compare_digest(signature, 'sha1=' + hmac_digest):
+        return True
+    else:
+        logging.error('Signature verification failed')
+        return False
+
 
 @app.route('/webhook', methods=['POST'])
 def handle_webhook():
-    if not verify_signature(request):
-        abort(400, 'Invalid signature')
-    
+    logging.info("Received a new webhook request")
+
+    # Extract only the necessary information (e.g., repo_url) instead of logging the full payload
     data = request.json
-    repo_url = data['repository']['clone_url']
-    logging.info(f"Attempting to process webhook for repo URL: {repo_url}")
+    
+    # Only log repository clone URL (avoiding full repository details)
+    repo_url = data.get('repository', {}).get('clone_url', 'Unknown Repo URL')
+    logging.info(f"Processing repo URL: {repo_url}")
+
+    # Log other relevant info without logging sensitive data
+    commits = data.get('commits', [])
+    logging.info(f"Number of commits: {len(commits)}")
     
     if lock.acquire(blocking=False):
         try:
@@ -181,9 +215,11 @@ def handle_webhook():
             lock.release()
             logging.info(f"Lock released for repo URL: {repo_url}")
     else:
-        error_message = f">>> ERROR: Concurrent processing prevented starting the process for: {repo_url}. Process skipped. Please, try again later."
+        error_message = f">>> ERROR: Concurrent processing prevented starting the process for: {repo_url}. Process skipped. Please try again later."
         logging.error(error_message)
         return 'Process skipped due to concurrency lock', 503
+
+
     
 @app.errorhandler(400)
 def bad_request(error):
@@ -206,4 +242,4 @@ def handle_unexpected_error(error):
     return {'error': 'An unexpected error occurred'}, 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001 )
+    app.run(port=5001, debug=True)

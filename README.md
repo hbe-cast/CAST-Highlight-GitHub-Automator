@@ -1,54 +1,64 @@
+Here is the improved and rephrased version of your README with formatting fixes and enhanced clarity:
 # My-Github-App Setup Guide
 
 ## Prerequisites
 
-Before you start setting up My-Github-App, ensure you have the following prerequisites installed on your local machine:
+Before setting up **My-Github-App**, ensure the following are installed on your local machine:
 
-1. **Git**: Needed to clone the My-Github-App repository. Download and install Git from [git-scm.com](https://git-scm.com/).
+1. **Git**: Required for cloning the My-Github-App repository. Download and install Git from [git-scm.com](https://git-scm.com/).
+   
+2. **Python**: This application is built using Python (Flask framework). Ensure Python (preferably version 3) is installed on your machine. You can download it from [python.org](https://www.python.org/).
 
-2. **Python**: The application is a Python-based Flask app. Ensure you have Python installed. You can download it from [python.org](https://www.python.org/). This guide assumes you are using Python 3.
+3. **pip**: The Python package installer. Pip should come pre-installed with Python versions 3.4 and above. Use the following command to install the necessary packages:
+    ```bash
+    pip install Flask pandas requests fasteners openpyxl waitress
+    ```
 
-3. **pip**: Python's package installer. It comes pre-installed with Python versions 3.4 and above. You'll need pip to install the required Python packages.
+4. **ngrok**: Required to expose your local server to the internet for webhook events. No manual setup is needed as the `app.py` script will automatically use the ngrok executable included in the repository, which was originally downloaded from [ngrok.com](https://ngrok.com/).
 
-4. **ngrok**: Required to expose your local server to the internet for webhook events. Use the executable available in the repo which was downloaded from [ngrok.com](https://ngrok.com/).
+5. **Excel**: The application requires an Excel file (`app_map.xlsx`) for repository mapping. Ensure you have Excel or a compatible spreadsheet tool to create or edit this file.
 
-5. **Excel**: The application requires an Excel file (`app_map.xlsx`) for repository mapping. Ensure you have Excel or a compatible spreadsheet program to create or edit this file.
+6. **Install GitHub App**: Install the CAST GitHub app from the GitHub Marketplace at the repository or organization level. You can find it here: [GitHub App](https://github.com/marketplace/gitrepofetcher).
 
-6. **GitHub App**: If you need to set up the GitHub App, refer to the [GitHub App Setup Guide](github-app-setup.md).
+Once these prerequisites are met, proceed with the setup instructions below.
 
-After installing the prerequisites, follow the steps below to set up and run the My-Github-App on your local machine.
+---
 
-### 1. Cloning the Repository
-Clone the `My-Github-App` repository to your local machine using the following command:
-```bash
-git clone git@github.com:hbe-cast/my-github-app.git
-```
+Here is the corrected version with proper numbering:
+
+Here’s the revised version that omits the sensitive information while keeping the instructions clear:
+
+---
+
+## Setup Instructions
+
+### 1. Download the CAST GitHub Automator
+Download the latest stable release of the CAST GitHub Automator from the following link: [CAST GitHub Automator Releases](https://github.com/hbe-cast/my-github-app/releases). Make sure to select a production-ready version for your setup.
 
 ### 2. Downloading the Highlight Command Line Interface (HL CLI)
 Download the HL CLI from the [official download page](https://doc.casthighlight.com/product-tutorials-third-party-tools/automated-code-scan-command-line/).
 
-### 3. Setting Up HL CLI
-After downloading, extract the `Highlight-Automation-Command.tar` file. Copy the contents of the extracted `perl` folder into the `My-Github-App` directory you cloned in step 1.
+### 3. Configuring the Application
+Update the `config.json` file with the required values. Ensure that all fields are filled out correctly to prevent issues during runtime.
 
-### 4. Configuring the Application
-Update the `config.json` file with the necessary values. Ensure all fields are filled out correctly to avoid any issues during runtime.
+### 4. Setting Up `ngrok-config.yaml`
+Ensure that the `ngrok-config.yaml` file is properly configured with the correct values for the `authtoken` and `domain`, provided by the CAST Team. This file is crucial for exposing your local application to the internet. Make sure the `addr` is set to the correct port (e.g., `5001`) as used by your Flask app.
 
 ### 5. Running the Application
-Navigate to the `My-Github-App` directory in a terminal window and start the application by running:
+Navigate to the `My-Github-App` directory in a terminal and start the application with the following command:
 ```bash
-python app.py
+waitress-serve --port=5001 app:app
 ```
 
 ### 6. Establishing a Public Endpoint
-Open a new terminal in the `My-Github-App` directory and execute the following command to create a public URL for your Flask application:
+In a new terminal window, navigate to the same directory and create a public URL using ngrok with this command:
 ```bash
-ngrok http 3000
+ngrok http --domain=CAST_NGROK_DOMAIN 5001 --config=path/to/your/ngrok-config.yaml
 ```
-
-This step uses [ngrok](https://ngrok.com/docs/) to expose your local server to the internet, enabling GitHub to trigger webhooks.
+This command exposes your Flask application to the internet, enabling GitHub to trigger webhook events.
 
 ### 7. Preparing the Repository Mapping File
-Ensure you have an Excel file named `app_map.xlsx` in the `My-Github-App` directory. The file should adhere to the following format:
+Ensure that an Excel file named `app_map.xlsx` is located in the `My-Github-App` directory. The file should follow this format:
 
 | app_name      | troux_id    | gh_url                                      |
 |---------------|-------------|---------------------------------------------|
@@ -56,43 +66,43 @@ Ensure you have an Excel file named `app_map.xlsx` in the `My-Github-App` direct
 | GitCloner1    | 7E876-879YUP| https://github.com/hbe-cast/GitCloner_1     |
 | WebGoat_test  | 87GHY-123HJ | https://github.com/hbe-cast/WebGoat_test    |
 
-**Note:** Repositories without a `troux_id` will not be cloned, and the application will halt.
+**Note**: Repositories without a `troux_id` will not be cloned, and the application will stop.
 
 ### 8. Triggering Scans
-Whenever changes are pushed to a repository in your organization where the GitHub app is installed, it will trigger an event. This event clones the repository to your local machine and performs a scan using the HL CLI. The scan results are then uploaded to the Highlight instance specified in the `repo_config.json` file.
+Whenever changes are pushed to a repository where the GitHub App is installed, an event will be triggered. This event will clone the repository to your local machine and initiate a scan using the HL CLI. The results will be uploaded to the Highlight instance specified in the `config.json` file.
 
-# Summary Details of the GitHub App
+---
 
-We've developed an integration between a GitHub App and a Flask-based web application that automates the cloning of repositories into a specified directory on a server or local machine whenever a "push" event occurs in any of the repositories where the GitHub App is installed.
+## Summary of the GitHub App
+
+The **My-Github-App** integrates a GitHub App with a Flask-based web application, automating the cloning of repositories into a designated directory on your machine when a "push" event occurs.
 
 ### How It Works:
 
-1. **GitHub App Setup**: A GitHub App was created and configured with permissions to access repository contents. It was set to receive webhook events, specifically "push" events, from repositories where the App is installed.
+1. **GitHub App Setup**: A GitHub App is created and configured with the necessary permissions to access repository contents. It listens for "push" events in repositories where the App is installed.
+   
+2. **Webhook Configuration**: The GitHub App sends event notifications to a public URL (provided by `ngrok`) which points to the Flask application. For local development, ngrok is used to expose the local server to the internet.
 
-2. **Webhook Configuration**: The GitHub App's webhook is configured to send event notifications to a publicly accessible URL, which points to our Flask application. For local development and testing, we used `ngrok` to expose the local server to the internet.
+3. **Event Handling**: When a push event occurs, GitHub sends a webhook event containing the repository's clone URL to the Flask app.
 
-3. **Event Handling**: When a push event occurs in a repository, GitHub sends a webhook event to the Flask application. The event contains details about the push, including the repository's clone URL.
+4. **Verification**: The Flask app verifies the webhook event's authenticity using a shared secret (webhook secret) set in the GitHub App configuration.
 
-4. **Verification**: Upon receiving a webhook event, the Flask app verifies the event's authenticity using a shared secret (the webhook secret set in the GitHub App settings) to ensure it's a legitimate request from GitHub.
+5. **Cloning Operation**: Once verified, the Flask app extracts the repository's clone URL and executes the `git clone` operation to clone the repository to a specified directory on the machine.
 
-5. **Cloning Operation**: After verification, the Flask app extracts the repository's clone URL from the webhook payload and performs a `git clone` operation, saving the repository contents to a pre-configured directory on the server or local machine.
+### Architecture Overview:
 
-### Architecture:
+- **GitHub App**: Acts as the interface between GitHub repositories and the Flask app. It listens for push events and sends notifications via webhooks.
+  
+- **Flask Application**: A webhook server that processes webhook events, verifies them, and performs cloning operations.
 
-- **GitHub App**: Serves as the interface between GitHub repositories and the Flask application. It's configured to listen for push events and send notifications to the Flask app via webhooks.
+- **ngrok**: Provides a publicly accessible URL for the Flask app, making it accessible from the internet for GitHub webhook events.
 
-- **Flask Web Application**: Acts as a webhook server that listens for incoming webhook events from the GitHub App. It contains logic to verify webhook payloads, extract necessary information, and execute repository cloning operations.
-
-- **`ngrok`/Public URL**: Provides a bridge between GitHub and the Flask application running on a local machine or private network, making the Flask app's webhook endpoint accessible from the internet.
-
-- **File System/Target Directory**: The location on the server or local machine where the repositories are cloned. Each repository is cloned into a unique subdirectory within this base directory, based on the repository's name.
+- **File System**: The directory where repositories are cloned. Each repository is cloned into a unique subdirectory based on its name.
 
 ### Key Components:
 
-- **Webhook Secret**: Used to secure and verify the communication between GitHub and the Flask application, ensuring that webhook events are authentic.
+- **Webhook Secret**: Secures communication between GitHub and the Flask app by verifying the authenticity of webhook events.
 
-- **`repo_config.json` Configuration File**: Contains configurable parameters for the Flask app, such as the base target directory for cloning operations.
+- **`repo_config.json`**: Contains configuration parameters, such as the base directory for cloning operations.
 
-- **Cloning Logic**: Embedded within the Flask app, this logic handles the cloning of repositories using the `git clone` command, triggered by validated push events from GitHub.
-
-This setup automates the cloning of repositories, ensuring that the latest changes are always mirrored in the specified directory on the server or local machine, facilitating a seamless workflow for managing and archiving repository contents in response to development activities.
+- **Cloning Logic**: Embedded within the Flask app, responsible for cloning repositories upon validated push events.

@@ -1,0 +1,7 @@
+version: "2"
+authtoken: "2hhD8W3fmO84ikxsuamWb9OOeC2_4fo8JN5USdJRCQGZBwDyK"
+tunnels:
+  http_tunnel:
+    proto: http
+    addr: 5001
+    domain: cast.gh.ngrok.app
