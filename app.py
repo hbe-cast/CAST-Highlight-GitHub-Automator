@@ -12,7 +12,7 @@ import requests
 import fasteners
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s', handlers=[logging.FileHandler("my-github-app.log"), logging.StreamHandler()])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s', handlers=[logging.FileHandler("logs.log"), logging.StreamHandler()])
 app = Flask(__name__)
 
 # Load the configuration from a JSON file
@@ -22,11 +22,10 @@ with open('config.json') as config_file:
 # Config Variables
 BASE_TARGET_DIR = config['base_target_dir']
 HIGHLIGHT_JAR_PATH = config['highlight_jar_path']
-# PERL_DIR = config['perl_dir']
+PERL_DIR = config['perl_dir']
 ANALYZER_DIR = config['analyzer_dir']
 WORKING_DIR = config['working_dir']
 COMPANY_ID = config['companyId']
-# APPLICATION_ID = config['applicationId']
 TOKEN_AUTH = config['tokenAuth']
 WEBHOOK_SECRET = config['webhook_secret']
 MAP_FILE = config['map_file']
@@ -146,8 +145,9 @@ def execute_cli_command(target_dir, application_id):
         # Define the command
         command = [
             'java', '-jar', HIGHLIGHT_JAR_PATH,
-            '--workingDir', WORKING_DIR,
+            '--workingDir', WORKING_DIR,       
             '--sourceDir', target_dir,
+            '--perlInstallDir', PERL_DIR,
             '--companyId', COMPANY_ID,
             '--applicationId', str(application_id),
             '--tokenAuth', TOKEN_AUTH
