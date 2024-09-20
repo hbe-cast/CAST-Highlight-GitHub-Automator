@@ -10,13 +10,15 @@ from subprocess import run, PIPE, CalledProcessError
 import pandas as pd
 import requests
 import fasteners
+import shutil
+import stat
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s', handlers=[logging.FileHandler("logs.log"), logging.StreamHandler()])
+logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s', handlers=[logging.FileHandler("app.log"), logging.StreamHandler()])
 app = Flask(__name__)
 
 # Load the configuration from a JSON file
-with open('config.json') as config_file:
+with open('hbe-config.json') as config_file:
     config = json.load(config_file)
 
 # Config Variables
@@ -40,9 +42,8 @@ task_queue = queue.Queue()
 def worker():
     while True:
         repo_url, base_target_dir = task_queue.get()
-        logging.info(f"Task completed for {repo_url}")
         try:
-            clone_repository(repo_url, base_target_dir, base_target_dir)
+            clone_repository(repo_url, base_target_dir)
             logging.info(f"Task completed for {repo_url}")
         finally:
             task_queue.task_done()
@@ -54,42 +55,63 @@ for i in range(num_worker_threads):
     t.daemon = True
     t.start()
 
-def clone_repository(repo_url, base_target_dir, target_dir):
+def handle_remove_readonly(func, path, exc_info):
+    """
+    Clear the read-only bit and reattempt the removal.
+    This will handle the permission error for locked or read-only files.
+    """
+    logging.warning(f"Handling error for path: {path}")
+    os.chmod(path, stat.S_IWRITE)  # Change the file to be writable
+    func(path)  # Retry the function (in this case, os.unlink or os.rmdir)
+
+def delete_existing_clone(unique_id_dir):
+    """
+    Delete the specific directory if it already exists.
+    """
+    if os.path.exists(unique_id_dir):
+        try:
+            shutil.rmtree(unique_id_dir, onerror=handle_remove_readonly)
+            logging.info(f"Deleted existing directory: {unique_id_dir}")
+        except Exception as e:
+            logging.error(f"Failed to delete directory {unique_id_dir}: {e}")
+
+def clone_repository(repo_url, base_target_dir):
     logging.info("========== Process Start ==========")
     logging.info("========== Reading App Mapping ==========")
+
     try:
         df = pd.read_excel(MAP_FILE, usecols="A:D", engine='openpyxl')
-        df.columns = ['app_name', 'troux_id', 'gh_url', 'hl_app_id']
+        df.columns = ['app_name', 'unique_id', 'github_url', 'highlight_app_id']
     except Exception as e:
         logging.error(f">>> ERROR: Error reading Excel file: {e}")
         return
 
-    # Normalize repo_url by removing '.git' if present to match with 'gh_url' in the Excel file
+    # Normalize repo_url by removing '.git' if present to match with 'github_url' in the Excel file
     normalized_repo_url = repo_url[:-4] if repo_url.endswith('.git') else repo_url
 
-    # Match the normalized URL with the 'gh_url' column in the DataFrame
-    app_mapping_row = df[df['gh_url'].str.strip() == normalized_repo_url.strip()]
+    # Match the normalized URL with the 'github_url' column in the DataFrame
+    app_mapping_row = df[df['github_url'].str.strip() == normalized_repo_url.strip()]
 
     if app_mapping_row.empty:
         logging.warning(f">>> ERROR: No mapping found for the repository URL: {repo_url}")
         return
 
-    if pd.isnull(app_mapping_row['hl_app_id'].values[0]):
-        logging.error(">>> ERROR: 'hl_app_id' is missing. Please update the mapping with the HL App ID.")
+    if pd.isnull(app_mapping_row['highlight_app_id'].values[0]):
+        logging.error(">>> ERROR: 'highlight_app_id' is missing. Please update the mapping with the HL App ID.")
         return
 
     try:
-        application_id = int(str(app_mapping_row['hl_app_id'].values[0]).strip())
+        application_id = int(str(app_mapping_row['highlight_app_id'].values[0]).strip())
     except ValueError:
-        logging.error(">>> ERROR: 'hl_app_id' value is not a valid integer. Please correct the ID format.")
+        logging.error(">>> ERROR: 'highlight_app_id' value is not a valid integer. Please correct the ID format.")
         return
 
-    # Verify hl_app_id exists in CAST Highlight
+    # Verify highlight_app_id exists in CAST Highlight
     api_url = f"https://rpa.casthighlight.com/WS2/domains/{COMPANY_ID}/applications"
     headers = {'Authorization': f'Bearer {TOKEN_AUTH}'}
     try:
         response = requests.get(api_url, headers=headers)
-        response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX or 5XX
+        response.raise_for_status()
         applications = response.json()
         if not any(app.get('id') == application_id for app in applications):
             logging.error(f">>> ERROR: CAST Application ID {application_id} doesn't exist. Please create the corresponding application in CAST Highlight.")
@@ -98,61 +120,53 @@ def clone_repository(repo_url, base_target_dir, target_dir):
         logging.error(f">>> ERROR: HTTP error when contacting CAST Highlight API: {e.response.content}")
         return
     except requests.exceptions.RequestException as e:
-        logging.error(f">>> ERROR: Failed to verify hl_app_id against CAST Highlight API: {e}")
+        logging.error(f">>> ERROR: Failed to verify highlight_app_id against CAST Highlight API: {e}")
         return
-    
-    # Continue with cloning if hl_app_id exists in CAST Highlight...
-    troux_id = app_mapping_row['troux_id'].values[0]
-    troux_id_dir = os.path.join(base_target_dir, str(troux_id))
-    if not os.path.exists(troux_id_dir):
-        os.makedirs(troux_id_dir)
-        logging.info(f"Created parent directory: {troux_id_dir}")
 
-    same_troux_id_df = df[df['troux_id'] == troux_id]
+    # Continue with cloning if highlight_app_id exists in CAST Highlight...
+    unique_id = app_mapping_row['unique_id'].values[0]
+    unique_id_dir = os.path.join(base_target_dir, str(unique_id))
 
-    for _, row in same_troux_id_df.iterrows():
-        git_url = row['gh_url']
-        repo_name = git_url.split('/')[-1]
-        repo_target_dir = os.path.join(troux_id_dir, repo_name)
+    # Delete the specific directory if it already exists
+    delete_existing_clone(unique_id_dir)
 
-        try:
-            logging.info("========== Cloning Process ==========")
-            logging.info(f"Starting cloning of repository from {git_url} into {repo_target_dir}")
-            run(['git', 'clone', git_url, repo_target_dir], check=True, stderr=PIPE)
-            logging.info(f'Repository cloned successfully into {repo_target_dir}')
-        except CalledProcessError as e:
-            logging.error(f'>>> ERROR: Failed to clone repository: {e}\n{e.stderr.decode()}')
-            return False
-        
-        execute_cli_command(troux_id_dir, application_id)
-        
-        return True
-    #else:
-    #    logging.warning(f">>> ERROR: No valid Troux ID found for the repository URL: {repo_url}")
+    # Now proceed to clone the repository into this directory
+    try:
+        logging.info(f"Starting cloning of repository from {repo_url} into {unique_id_dir}")
+        run(['git', 'clone', repo_url, unique_id_dir], check=True, stderr=PIPE)
+        logging.info(f'Repository cloned successfully into {unique_id_dir}')
+    except CalledProcessError as e:
+        logging.error(f'>>> ERROR: Failed to clone repository: {e}\n{e.stderr.decode()}')
+        return False
+
+    # Execute additional CLI commands if needed
+    execute_cli_command(unique_id_dir, application_id)
+
+    return True
 
 def execute_cli_command(target_dir, application_id):
     logging.info("========== CLI: Importing to Highlight ==========")
-    
+
     # Ensure the target directory uses forward slashes
     target_dir = target_dir.replace('\\', '/')
 
     # Change to the analyzer directory
-    original_dir = os.getcwd()  # Store the original working directory
+    original_dir = os.getcwd()
     try:
         logging.info(f"Changing working directory to analyzer_dir: {ANALYZER_DIR}")
-        os.chdir(ANALYZER_DIR)  # Change to analyzer_dir
+        os.chdir(ANALYZER_DIR)
 
         # Define the command
         command = [
             'java', '-jar', HIGHLIGHT_JAR_PATH,
-            '--workingDir', WORKING_DIR,       
+            '--workingDir', WORKING_DIR,
             '--sourceDir', target_dir,
             '--perlInstallDir', PERL_DIR,
             '--companyId', COMPANY_ID,
             '--applicationId', str(application_id),
             '--tokenAuth', TOKEN_AUTH
         ]
-        
+
         # Execute the command
         logging.info(f"Executing CLI command in {ANALYZER_DIR}")
         result = run(command, stdout=PIPE, stderr=PIPE, text=True)
@@ -162,50 +176,43 @@ def execute_cli_command(target_dir, application_id):
             logging.info(f'CLI command output: {result.stdout}')
         if result.stderr:
             logging.error(f'CLI command error output: {result.stderr}')
-    
+
     except CalledProcessError as e:
         logging.error(f'>>> ERROR: Failed to execute CLI command: Return code {e.returncode}')
         if e.stdout:
             logging.error(f'>>> CLI command output: {e.stdout}')
         if e.stderr:
             logging.error(f'>>> CLI command error output: {e.stderr}')
-    
+
     finally:
-        # Change back to the original directory
         os.chdir(original_dir)
         logging.info(f"Returned to original working directory: {original_dir}")
-
 
 def verify_signature(request):
     signature = request.headers.get('X-Hub-Signature')
     if not signature:
         logging.error('Signature not found in headers')
         return False
-    
+
     hmac_digest = hmac.new(WEBHOOK_SECRET.encode(), request.data, hashlib.sha1).hexdigest()
-    
+
     if hmac.compare_digest(signature, 'sha1=' + hmac_digest):
         return True
     else:
         logging.error('Signature verification failed')
         return False
 
-
 @app.route('/webhook', methods=['POST'])
 def handle_webhook():
     logging.info("Received a new webhook request")
 
-    # Extract only the necessary information (e.g., repo_url) instead of logging the full payload
     data = request.json
-    
-    # Only log repository clone URL (avoiding full repository details)
     repo_url = data.get('repository', {}).get('clone_url', 'Unknown Repo URL')
     logging.info(f"Processing repo URL: {repo_url}")
 
-    # Log other relevant info without logging sensitive data
     commits = data.get('commits', [])
     logging.info(f"Number of commits: {len(commits)}")
-    
+
     if lock.acquire(blocking=False):
         try:
             logging.info(f"Lock acquired for repo URL: {repo_url}")
@@ -219,8 +226,6 @@ def handle_webhook():
         logging.error(error_message)
         return 'Process skipped due to concurrency lock', 503
 
-
-    
 @app.errorhandler(400)
 def bad_request(error):
     logging.error(f'Bad Request: {error}')

@@ -1,12 +1,17 @@
 {
+    "_comment_ngrok": "=== Ngrok Configuration ===",
     "webhook_secret": "<YOUR_WEBHOOK_SECRET>",
     "authtoken": "<YOUR_AUTH_TOKEN>",
-    "base_target_dir": "<PATH_TO_BASE_TARGET_DIRECTORY>",
+
+    "_comment_highlight": "=== Ngrok Configuration ===",
     "highlight_jar_path": "<PATH_TO_HIGHLIGHT_AUTOMATION_JAR>",
     "perl_dir": "<PATH_TO_PERL_DIRECTORY>",
+    "companyId": "<YOUR_COMPANY_ID>",
+    "tokenAuth": "<YOUR_TOKEN_AUTH>",
+
+    "_comment_local": "=== Local Configuration ===",
+    "base_target_dir": "<PATH_TO_BASE_TARGET_DIRECTORY>",
     "analyzer_dir": "<PATH_TO_ANALYZER_DIRECTORY>",
     "working_dir": "<PATH_TO_WORKING_DIRECTORY>",
-    "map_file": "<PATH_TO_MAPPING_EXCEL_FILE>",
-    "companyId": "<YOUR_COMPANY_ID>",
-    "tokenAuth": "<YOUR_TOKEN_AUTH>"
+    "map_file": "<PATH_TO_MAPPING_EXCEL_FILE>"
 }
