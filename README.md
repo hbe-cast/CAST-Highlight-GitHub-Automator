@@ -1,4 +1,3 @@
-Here is the improved and rephrased version of your README with formatting fixes and enhanced clarity:
 # My-Github-App Setup Guide
 
 ## Prerequisites
@@ -6,14 +5,13 @@ Here is the improved and rephrased version of your README with formatting fixes 
 Before setting up **My-Github-App**, ensure the following are installed on your local machine:
 
 1. **Git**: Required for cloning the My-Github-App repository. Download and install Git from [git-scm.com](https://git-scm.com/).
-   
+
 2. **Python**: This application is built using Python (Flask framework). Ensure Python (preferably version 3) is installed on your machine. You can download it from [python.org](https://www.python.org/).
 
 3. **pip**: The Python package installer. Pip should come pre-installed with Python versions 3.4 and above. Use the following command to install the necessary packages:
     ```bash
-    pip install Flask pandas requests fasteners openpyxl waitress
+    pip install Flask pandas requests fasteners openpyxl waitress pywin32
     ```
-
 4. **ngrok**: Required to expose your local server to the internet for webhook events. No manual setup is needed as the `app.py` script will automatically use the ngrok executable included in the repository, which was originally downloaded from [ngrok.com](https://ngrok.com/).
 
 5. **Excel**: The application requires an Excel file (`app_map.xlsx`) for repository mapping. Ensure you have Excel or a compatible spreadsheet tool to create or edit this file.
@@ -21,12 +19,6 @@ Before setting up **My-Github-App**, ensure the following are installed on your 
 6. **Install GitHub App**: Install the CAST GitHub app from the GitHub Marketplace at the repository or organization level. You can find it here: [GitHub App](https://github.com/marketplace/gitrepofetcher).
 
 Once these prerequisites are met, proceed with the setup instructions below.
-
----
-
-Here is the corrected version with proper numbering:
-
-Here’s the revised version that omits the sensitive information while keeping the instructions clear:
 
 ---
 
@@ -44,20 +36,7 @@ Update the `config.json` file with the required values. Ensure that all fields a
 ### 4. Setting Up `ngrok-config.yaml`
 Ensure that the `ngrok-config.yaml` file is properly configured with the correct values for the `authtoken` and `domain`, provided by the CAST Team. This file is crucial for exposing your local application to the internet. Make sure the `addr` is set to the correct port (e.g., `5001`) as used by your Flask app.
 
-### 5. Running the Application
-Navigate to the `My-Github-App` directory in a terminal and start the application with the following command:
-```bash
-waitress-serve --port=5001 app:app
-```
-
-### 6. Establishing a Public Endpoint
-In a new terminal window, navigate to the same directory and create a public URL using ngrok with this command:
-```bash
-ngrok http --domain=CAST_NGROK_DOMAIN 5001 --config=path/to/your/ngrok-config.yaml
-```
-This command exposes your Flask application to the internet, enabling GitHub to trigger webhook events.
-
-### 7. Preparing the Repository Mapping File
+### 5. Preparing the Repository Mapping File
 Ensure that an Excel file named `app_map.xlsx` is located in the `My-Github-App` directory. The file should follow this format:
 
 | app_name      | troux_id    | gh_url                                      |
@@ -68,8 +47,23 @@ Ensure that an Excel file named `app_map.xlsx` is located in the `My-Github-App`
 
 **Note**: Repositories without a `troux_id` will not be cloned, and the application will stop.
 
-### 8. Triggering Scans
+### 6. Triggering Scans
 Whenever changes are pushed to a repository where the GitHub App is installed, an event will be triggered. This event will clone the repository to your local machine and initiate a scan using the HL CLI. The results will be uploaded to the Highlight instance specified in the `config.json` file.
+
+### 7. Running the Service Installer
+After all the steps above are completed, you need to install and run **My-Github-App** as a Windows service to ensure it runs automatically when the system starts. Follow these steps:
+
+1. Open a terminal window as **Administrator**.
+2. Navigate to the `My-Github-App` directory.
+3. Run the batch file to install and start the service:
+   ```bash
+   serviceInstaller.bat
+   ```
+
+This batch script will:
+- Install the Python service using the `MyService.py` script.
+- Start the service.
+- Configure the service to auto-start on system boot.
 
 ---
 
