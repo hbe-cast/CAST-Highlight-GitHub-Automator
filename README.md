@@ -4,7 +4,7 @@ This guide outlines the steps to set up and run the CAST Highlight GitHub Automa
 
 ## Application Overview
 
-1. **[CAST Highlight GitHub Automator](https://github.com/hbe-cast/my-github-app/releases)**: Automates repository cloning and initiates scans upon detecting push events.
+1. **[CAST Highlight GitHub Automator](https://github.com/hbe-cast/CAST-Highlight-GitHub-Automator/releases)**: Automates repository cloning and initiates scans upon detecting push events.
    
 2. **[CAST GitSync](https://github.com/marketplace/gitrepofetcher)**: A GitHub app that provides the necessary permissions to access repositories and listen for push events. Refer to [this guide](https://docs.github.com/en/apps/using-github-apps/installing-a-github-app-from-github-marketplace-for-your-organizations) for installation instructions.
 
@@ -27,7 +27,7 @@ Ensure the following tools and software are installed:
 
 ### 1. Download the CAST Highlight GitHub Automator
 
-Download the latest release from [here](https://github.com/hbe-cast/my-github-app/releases).
+Download the latest release from [here](https://github.com/hbe-cast/CAST-Highlight-GitHub-Automator/releases).
 
 ### 2. Download the Highlight Command Line Interface (HL CLI)
 
