@@ -3,7 +3,7 @@
     "webhook_secret": "<YOUR_WEBHOOK_SECRET>",
     "authtoken": "<YOUR_AUTH_TOKEN>",
 
-    "_comment_highlight": "=== Ngrok Configuration ===",
+    "_comment_highlight": "=== CAST Highlight Configuration ===",
     "highlight_jar_path": "<PATH_TO_HIGHLIGHT_AUTOMATION_JAR>",
     "perl_dir": "<PATH_TO_PERL_DIRECTORY>",
     "companyId": "<YOUR_COMPANY_ID>",
