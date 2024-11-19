@@ -41,7 +41,7 @@ This file manages the connection between GitHub, ngrok, and CAST Highlight. Ensu
 
 #### `ngrok-config.yaml`
 
-This file configures the ngrok connection. Ensure the `authtoken` and `domain` values are correctly set, and the `addr` field points to the port (e.g., `5001`) used by your Flask app.
+This file configures the ngrok connection. Ensure the `authtoken` and `domain` values are correctly set, and the `addr` field points to the port (e.g., `5001`) used by the python app.
 
 ### 4. Repository Mapping File
 

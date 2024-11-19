@@ -14,7 +14,12 @@ import shutil
 import stat
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s', handlers=[logging.FileHandler("app.log"), logging.StreamHandler()])
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s:%(levelname)s:%(message)s', 
+    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()]
+)
+
 app = Flask(__name__)
 
 # Load the configuration from a JSON file
@@ -202,20 +207,62 @@ def verify_signature(request):
         logging.error('Signature verification failed')
         return False
 
+# @app.route('/webhook', methods=['POST'])
+# def handle_webhook():
+#     logging.info("Received a new webhook request")
+
+#     data = request.json
+#     repo_url = data.get('repository', {}).get('clone_url', 'Unknown Repo URL')
+#     logging.info(f"Processing repo URL: {repo_url}")
+
+#     commits = data.get('commits', [])
+#     logging.info(f"Number of commits: {len(commits)}")
+
+#     if lock.acquire(blocking=False):
+#         try:
+#             logging.info(f"Lock acquired for repo URL: {repo_url}")
+#             task_queue.put((repo_url, BASE_TARGET_DIR))
+#             return 'Webhook queued', 202
+#         finally:
+#             lock.release()
+#             logging.info(f"Lock released for repo URL: {repo_url}")
+#     else:
+#         error_message = f">>> ERROR: Concurrent processing prevented starting the process for: {repo_url}. Process skipped. Please try again later."
+#         logging.error(error_message)
+#         return 'Process skipped due to concurrency lock', 503
+
 @app.route('/webhook', methods=['POST'])
 def handle_webhook():
     logging.info("Received a new webhook request")
 
     data = request.json
+    
+    # Log the payload to inspect the structure and ensure 'ref' exists
+    logging.info(f"Full payload data: {json.dumps(data, indent=2)}")
+
+    # Attempt to retrieve the branch information from the payload
+    branch = data.get('ref')
+    if branch:
+        logging.info(f"Branch found in payload: {branch}")
+    else:
+        logging.warning("Branch information not found in payload.")
+        return 'Branch info not found', 400
+
+    # Check if the event is a push to the main branch
+    if branch != 'refs/heads/main':
+        logging.info(f"Ignoring push event for non-main branch: {branch}")
+        return 'Ignored non-main branch event', 200
+
+    # If it's the main branch, proceed with the rest of the code
     repo_url = data.get('repository', {}).get('clone_url', 'Unknown Repo URL')
-    logging.info(f"Processing repo URL: {repo_url}")
+    logging.info(f"Processing repo URL: {repo_url} on branch: {branch}")
 
     commits = data.get('commits', [])
     logging.info(f"Number of commits: {len(commits)}")
 
     if lock.acquire(blocking=False):
         try:
-            logging.info(f"Lock acquired for repo URL: {repo_url}")
+            logging.info(f"Lock acquired for repo URL: {repo_url} (Queuing task)")
             task_queue.put((repo_url, BASE_TARGET_DIR))
             return 'Webhook queued', 202
         finally:
