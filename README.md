@@ -47,11 +47,11 @@ This file configures the ngrok connection. Ensure the `authtoken` and `domain` v
 
 Ensure the `map/app_map.xlsx` file exists in the `CAST Highlight GitHub Automator` directory. The file format should look like this:
 
-| app_name | unique_id      | github_url                   | highlight_app_id |
+| repo_name | unique_id      | github_url                   | highlight_app_id |
 |----------|----------------|------------------------------|------------------|
-| App1     | 7E876-879YUP   | https://github.com/user/app1  | 358776           |
-| App2     | 7E876-879YUP   | https://github.com/user/app2  | 358776           |
-| App3     | 87GHY-123HJ    | https://github.com/user/app3  | 358778           |
+| Repo1     | 7E876-879YUP   | https://github.com/user/app1  | 358776           |
+| Repo2     | 7E876-879YUP   | https://github.com/user/app2  | 358776           |
+| Repo3     | 87GHY-123HJ    | https://github.com/user/app3  | 358778           |
 
 - **app_name**: The name of the application in CAST Highlight.
 - **unique_id**: Repositories with the same unique_id are stored together.
