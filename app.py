@@ -23,7 +23,7 @@ logging.basicConfig(
 app = Flask(__name__)
 
 # Load the configuration from a JSON file
-with open('hbe-config.json') as config_file:
+with open('config.json') as config_file:
     config = json.load(config_file)
 
 # Config Variables
