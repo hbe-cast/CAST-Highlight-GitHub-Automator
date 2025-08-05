@@ -101,7 +101,7 @@ The **CAST Highlight GitHub Automator** streamlines the process of cloning repos
 - **GitHub App**: Listens for push events.
 - **Flask Application**: Handles webhook events and manages repository cloning.
 - **ngrok**: Exposes the Flask app to receive webhook events.
-- **File System**: Repositories are cloned into unique directories based on their names.
+- **File System**: Repositories are cloned into unique directories based on their names
 
 ### Key Components:
 
